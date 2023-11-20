@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script href="script.js"> </script>
+  <title>Jeu de la Vie de Conway</title>
+</head>
+
+<body>
+  <div id="gameContainer">
+    <h1>JEU DE LA VIE DE CONWAY</h1>
+    <canvas id="gameCanvas" width="1000" height="500"></canvas>
+    <div class="buttonContainer"> 
+      <button onclick="toggleGame()">ON / OFF</button>
+      <button onclick="resetGame()">Reset Grid</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const cellSize = 20; // Augmentation de la taille des cellules
+    const rows = Math.floor(canvas.height / cellSize); // Diminution du nombre de lignes
+    const cols = Math.floor(canvas.width / cellSize); // Diminution du nombre de colonnes
+
+    let grid = createEmptyGrid();
+    let isSelecting = true;
+    let running = false;
+    let interval;
+
+    function createEmptyGrid() {
+      return Array.from({ length: rows }, () => Array(cols).fill(0));
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          ctx.fillStyle = grid[i][j] ? '#2ecc71' : '#ecf0f1';
+          ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+          ctx.strokeStyle = '#bdc3c7';
+          ctx.strokeRect(j * cellSize, i * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    // Select dans la grille
+    function mousePressed(event) {
+      if (isSelecting) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        const col = Math.floor(mouseX / cellSize);
+        const row = Math.floor(mouseY / cellSize);
+
+        grid[row][col] = 1 - grid[row][col];
+        drawGrid();
+      }
+    }
+
+    function updateGrid() {
+      const newGrid = createEmptyGrid();
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const neighbors = countNeighbors(i, j);
+          if (grid[i][j] === 1) {
+            newGrid[i][j] = neighbors === 2 || neighbors === 3 ? 1 : 0;
+          } else {
+            newGrid[i][j] = neighbors === 3 ? 1 : 0;
+          }
+        }
+      }
+      grid = newGrid;
+    }
+
+    function countNeighbors(row, col) {
+      let count = 0;
+      for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+          const neighborRow = row + i;
+          const neighborCol = col + j;
+          if (
+            neighborRow >= 0 &&
+            neighborRow < rows &&
+            neighborCol >= 0 &&
+            neighborCol < cols
+          ) {
+            count += grid[neighborRow][neighborCol];
+          }
+        }
+      }
+      count -= grid[row][col];
+      return count;
+    }
+
+    function toggleGame() {
+      running = !running;
+      isSelecting = !running;
+      if (running) {
+        interval = setInterval(() => {
+          drawGrid();
+          updateGrid();
+        }, 100);
+      } else {
+        clearInterval(interval);
+      }
+    }
+
+    function resetGame() {
+      stopGame();
+      grid = createEmptyGrid();
+      isSelecting = true;
+      drawGrid();
+    }
+
+    function stopGame() {
+      if (running) {
+        clearInterval(interval);
+        running = false;
+      }
+    }
+
+    drawGrid(); // Appel de la fonction pour dessiner la grille au chargement
+    canvas.addEventListener('mousedown', mousePressed);
+  </script>
+</body>
+</html>
